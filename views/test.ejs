@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test - LabShare</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #0f0;
+    }
+    .test { margin: 10px 0; padding: 10px; background: #000; }
+    .pass { border-left: 4px solid #0f0; }
+    .fail { border-left: 4px solid #f00; color: #f00; }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>LabShare Diagnostics</h1>
+
+  <div id="results"></div>
+
+  <button onclick="testScreenCapture()">Test Screen Capture</button>
+  <button onclick="testSocket()">Test Socket Connection</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const results = document.getElementById('results');
+
+    function addResult(message, pass) {
+      const div = document.createElement('div');
+      div.className = 'test ' + (pass ? 'pass' : 'fail');
+      div.textContent = (pass ? '✓ ' : '✗ ') + message;
+      results.appendChild(div);
+    }
+
+    // Test browser support
+    addResult('Browser: ' + navigator.userAgent.split(')')[0] + ')', true);
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+      addResult('Screen Capture API: Supported', true);
+    } else {
+      addResult('Screen Capture API: NOT SUPPORTED - Use Chrome/Edge/Firefox', false);
+    }
+
+    if (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      addResult('Protocol: OK for screen capture', true);
+    } else {
+      addResult('Protocol: May have issues (use localhost or HTTPS)', false);
+    }
+
+    async function testScreenCapture() {
+      try {
+        addResult('Requesting screen capture...', true);
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        addResult('Screen capture GRANTED! Stream: ' + stream.id, true);
+
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.style.width = '200px';
+        video.style.border = '2px solid #0f0';
+        video.autoplay = true;
+        video.muted = true;
+        results.appendChild(video);
+
+        addResult('Preview created successfully', true);
+
+        setTimeout(() => {
+          stream.getTracks().forEach(track => track.stop());
+          addResult('Test complete - stream stopped', true);
+        }, 5000);
+      } catch (error) {
+        addResult('Screen capture FAILED: ' + error.name + ' - ' + error.message, false);
+      }
+    }
+
+    function testSocket() {
+      addResult('Connecting to server...', true);
+      const socket = io();
+
+      socket.on('connect', () => {
+        addResult('Socket connected! ID: ' + socket.id, true);
+        socket.emit('join-as-teacher');
+        addResult('Joined as teacher', true);
+      });
+
+      socket.on('connect_error', (err) => {
+        addResult('Socket connection FAILED: ' + err.message, false);
+      });
+
+      socket.on('disconnect', () => {
+        addResult('Socket disconnected', false);
+      });
+    }
+
+    // Auto test socket on load
+    setTimeout(testSocket, 500);
+  </script>
+</body>
+</html>

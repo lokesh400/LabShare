@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher - LabShare Ultra</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0e27;
+      color: white;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .header-left h1 {
+      font-size: 1.5em;
+      margin-bottom: 5px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      font-size: 0.9em;
+    }
+
+    .stat-box {
+      background: rgba(0,0,0,0.3);
+      padding: 8px 15px;
+      border-radius: 10px;
+    }
+
+    .stat-label {
+      opacity: 0.8;
+      font-size: 0.8em;
+      margin-bottom: 3px;
+    }
+
+    .stat-value {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 30px;
+      text-align: center;
+    }
+
+    #preview {
+      max-width: 95%;
+      max-height: 65vh;
+      border-radius: 15px;
+      box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+      display: none;
+      margin: 20px auto;
+      border: 3px solid #667eea;
+    }
+
+    .placeholder {
+      padding: 120px 20px;
+      color: #666;
+    }
+
+    .placeholder h2 {
+      font-size: 5em;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .placeholder p {
+      font-size: 1.5em;
+    }
+
+    .controls {
+      margin-top: 30px;
+    }
+
+    button {
+      padding: 18px 50px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    #startBtn {
+      background: linear-gradient(135deg, #00b894, #00cec9);
+      color: white;
+    }
+
+    #stopBtn {
+      background: linear-gradient(135deg, #d63031, #e17055);
+      color: white;
+      display: none;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      max-width: 1000px;
+      margin: 40px auto;
+    }
+
+    .info-card {
+      background: rgba(255,255,255,0.05);
+      padding: 25px;
+      border-radius: 15px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .info-card h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.1em;
+    }
+
+    .info-card ul {
+      text-align: left;
+      line-height: 2;
+      opacity: 0.9;
+    }
+
+    .feature-badge {
+      display: inline-block;
+      background: rgba(102, 126, 234, 0.2);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin: 5px;
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>👨‍🏫 Teacher Control Panel</h1>
+      <div class="feature-badge">⚡ Ultra Performance Mode</div>
+      <div class="feature-badge">🎯 200+ Users Capable</div>
+    </div>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Status</div>
+        <div class="stat-value" id="status">⚫ Ready</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Connected</div>
+        <div class="stat-value" id="connectedCount">0 students</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="placeholder" id="placeholder">
+      <h2>🖥️</h2>
+      <p>Click "Start Broadcasting" to share your screen</p>
+      <p style="font-size: 1em; margin-top: 10px; opacity: 0.7;">
+        Optimized for up to 200 simultaneous viewers
+      </p>
+    </div>
+
+    <video id="preview" autoplay muted></video>
+
+    <div class="controls">
+      <button id="startBtn">▶ Start Broadcasting</button>
+      <button id="stopBtn">⏹ Stop Broadcasting</button>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>🚀 Performance</h3>
+        <ul>
+          <li>60 FPS capable</li>
+          <li>Binary streaming</li>
+          <li>Hardware accelerated</li>
+          <li>Auto frame skipping</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h3>📡 Network</h3>
+        <ul>
+          <li>WebSocket only</li>
+          <li>No compression overhead</li>
+          <li>Volatile emit (no buffer)</li>
+          <li>10MB frame buffer</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h3>👥 Scalability</h3>
+        <ul>
+          <li>200+ simultaneous users</li>
+          <li>Efficient broadcasting</li>
+          <li>Automatic cleanup</li>
+          <li>Real-time monitoring</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/teacher.js"></script>
+</body>
+</html>
