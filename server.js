@@ -15,7 +15,6 @@ app.set('view engine', 'ejs');
 app.get('/', (_, res) => res.render('index'));
 app.get('/teacher', (_, res) => res.render('teacher'));
 app.get('/student', (_, res) => res.render('student'));
-
 let teacher = null;
 const students = new Map();
 
