@@ -2,220 +2,274 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Teacher - LabShare Ultra</title>
+  <title>LabShare — Teacher</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0e27;
-      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
+    /* ── Top bar ── */
+    .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 64px;
+      background: #1f2937;
+      border-bottom: 1px solid #374151;
+      flex-shrink: 0;
     }
 
-    .header-left h1 {
-      font-size: 1.5em;
-      margin-bottom: 5px;
-    }
-
-    .stats {
+    .logo {
       display: flex;
-      gap: 20px;
-      font-size: 0.9em;
-    }
-
-    .stat-box {
-      background: rgba(0,0,0,0.3);
-      padding: 8px 15px;
-      border-radius: 10px;
-    }
-
-    .stat-label {
-      opacity: 0.8;
-      font-size: 0.8em;
-      margin-bottom: 3px;
-    }
-
-    .stat-value {
+      align-items: center;
+      gap: 10px;
       font-size: 1.2em;
-      font-weight: bold;
+      font-weight: 700;
     }
 
-    .container {
-      padding: 30px;
-      text-align: center;
+    .logo-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #10b981;
     }
+
+    .logo-dot.offline { background: #6b7280; }
+
+    .pills {
+      display: flex;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.82em;
+      font-weight: 600;
+      background: #374151;
+      color: #d1d5db;
+    }
+
+    .pill.green  { background: #064e3b; color: #6ee7b7; }
+    .pill.blue   { background: #1e3a5f; color: #93c5fd; }
+
+    /* ── Main area ── */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .preview-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 20px;
+    }
+
+    #placeholder {
+      text-align: center;
+      color: #4b5563;
+    }
+
+    #placeholder .icon { font-size: 5rem; margin-bottom: 16px; }
+    #placeholder h2 { font-size: 1.4em; margin-bottom: 8px; color: #9ca3af; }
+    #placeholder p  { font-size: 0.95em; }
 
     #preview {
-      max-width: 95%;
-      max-height: 65vh;
-      border-radius: 15px;
-      box-shadow: 0 10px 60px rgba(0,0,0,0.6);
       display: none;
-      margin: 20px auto;
-      border: 3px solid #667eea;
-    }
-
-    .placeholder {
-      padding: 120px 20px;
-      color: #666;
-    }
-
-    .placeholder h2 {
-      font-size: 5em;
-      margin-bottom: 20px;
-      opacity: 0.5;
-    }
-
-    .placeholder p {
-      font-size: 1.5em;
+      width: 100%;
+      max-height: calc(100vh - 200px);
+      border-radius: 12px;
+      box-shadow: 0 0 0 2px #10b981, 0 20px 60px rgba(0,0,0,0.6);
+      object-fit: contain;
+      background: #000;
     }
 
     .controls {
-      margin-top: 30px;
+      display: flex;
+      gap: 14px;
     }
 
-    button {
-      padding: 18px 50px;
-      font-size: 1.2em;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
       border: none;
-      border-radius: 50px;
+      border-radius: 999px;
+      font-size: 1em;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: bold;
-      margin: 10px;
-      transition: all 0.3s;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: opacity 0.2s, transform 0.15s;
     }
 
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
+    .btn:hover   { opacity: .88; transform: translateY(-1px); }
+    .btn:active  { transform: translateY(0); }
 
-    #startBtn {
-      background: linear-gradient(135deg, #00b894, #00cec9);
-      color: white;
-    }
+    .btn-primary  { background: #2563eb; color: #fff; }
+    .btn-stop     { background: #dc2626; color: #fff; display: none; }
 
-    #stopBtn {
-      background: linear-gradient(135deg, #d63031, #e17055);
-      color: white;
-      display: none;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    /* ── Side panel ── */
+    .panel {
+      width: 260px;
+      background: #1f2937;
+      border-left: 1px solid #374151;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
       gap: 20px;
-      max-width: 1000px;
-      margin: 40px auto;
+      overflow-y: auto;
     }
 
-    .info-card {
-      background: rgba(255,255,255,0.05);
-      padding: 25px;
-      border-radius: 15px;
-      border: 1px solid rgba(255,255,255,0.1);
+    .panel h3 {
+      font-size: 0.78em;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6b7280;
+      margin-bottom: 4px;
     }
 
-    .info-card h3 {
-      color: #667eea;
-      margin-bottom: 15px;
-      font-size: 1.1em;
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #111827;
+      border-radius: 8px;
     }
 
-    .info-card ul {
-      text-align: left;
-      line-height: 2;
-      opacity: 0.9;
+    .stat-row span:first-child { font-size: 0.88em; color: #9ca3af; }
+    .stat-row span:last-child  { font-size: 0.95em; font-weight: 600; }
+
+    .feat-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .feature-badge {
-      display: inline-block;
-      background: rgba(102, 126, 234, 0.2);
-      padding: 5px 15px;
-      border-radius: 20px;
+    .feat-list li {
       font-size: 0.85em;
-      margin: 5px;
-      border: 1px solid rgba(102, 126, 234, 0.3);
+      color: #d1d5db;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feat-list li::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-left">
-      <h1>👨‍🏫 Teacher Control Panel</h1>
-      <div class="feature-badge">⚡ Ultra Performance Mode</div>
-      <div class="feature-badge">🎯 200+ Users Capable</div>
-    </div>
-    <div class="stats">
-      <div class="stat-box">
-        <div class="stat-label">Status</div>
-        <div class="stat-value" id="status">⚫ Ready</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Connected</div>
-        <div class="stat-value" id="connectedCount">0 students</div>
-      </div>
-    </div>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot offline" id="liveDot"></div>
+    LabShare Teacher
   </div>
+  <div class="pills">
+    <div class="pill" id="status">Idle</div>
+    <div class="pill blue" id="connectedCount">0 students</div>
+  </div>
+</div>
 
-  <div class="container">
-    <div class="placeholder" id="placeholder">
-      <h2>🖥️</h2>
-      <p>Click "Start Broadcasting" to share your screen</p>
-      <p style="font-size: 1em; margin-top: 10px; opacity: 0.7;">
-        Optimized for up to 200 simultaneous viewers
-      </p>
+<div class="main">
+
+  <div class="preview-wrap">
+    <div id="placeholder">
+      <div class="icon">🖥️</div>
+      <h2>Nothing is being shared</h2>
+      <p>Click <strong>Start Sharing</strong> below to broadcast your screen</p>
     </div>
 
-    <video id="preview" autoplay muted></video>
+    <video id="preview" autoplay muted playsinline></video>
 
     <div class="controls">
-      <button id="startBtn">▶ Start Broadcasting</button>
-      <button id="stopBtn">⏹ Stop Broadcasting</button>
-    </div>
-
-    <div class="info-grid">
-      <div class="info-card">
-        <h3>🚀 Performance</h3>
-        <ul>
-          <li>60 FPS capable</li>
-          <li>Binary streaming</li>
-          <li>Hardware accelerated</li>
-          <li>Auto frame skipping</li>
-        </ul>
-      </div>
-      <div class="info-card">
-        <h3>📡 Network</h3>
-        <ul>
-          <li>WebSocket only</li>
-          <li>No compression overhead</li>
-          <li>Volatile emit (no buffer)</li>
-          <li>10MB frame buffer</li>
-        </ul>
-      </div>
-      <div class="info-card">
-        <h3>👥 Scalability</h3>
-        <ul>
-          <li>200+ simultaneous users</li>
-          <li>Efficient broadcasting</li>
-          <li>Automatic cleanup</li>
-          <li>Real-time monitoring</li>
-        </ul>
-      </div>
+      <button class="btn btn-primary" id="startBtn">▶&nbsp; Start Sharing</button>
+      <button class="btn btn-stop"    id="stopBtn" >⏹&nbsp; Stop Sharing</button>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/teacher.js"></script>
+  <div class="panel">
+    <div>
+      <h3>Live Stats</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <div class="stat-row">
+          <span>Protocol</span><span id="proto">WebRTC</span>
+        </div>
+        <div class="stat-row">
+          <span>Video</span><span id="resolution">—</span>
+        </div>
+        <div class="stat-row">
+          <span>Students</span><span id="studentStat">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Technology</h3>
+      <ul class="feat-list">
+        <li>Peer-to-peer (no re-encoding)</li>
+        <li>Hardware H.264 / VP8 codec</li>
+        <li>Adaptive bitrate</li>
+        <li>STUN NAT traversal</li>
+        <li>Sub-50 ms latency</li>
+        <li>60 FPS capable</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3>How to use</h3>
+      <ul class="feat-list">
+        <li>Click Start Sharing</li>
+        <li>Pick screen or window</li>
+        <li>Students open /student</li>
+        <li>Stream starts instantly</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/teacher.js"></script>
+<script>
+  // Wire up UI updates from teacher.js events (called by teacher.js via custom events)
+  document.addEventListener('sharing-started', (e) => {
+    const { width, height } = e.detail || {};
+    document.getElementById('resolution').textContent = width ? `${width}×${height}` : '—';
+    document.getElementById('status').textContent = '🔴 Live';
+    document.getElementById('status').className = 'pill green';
+    document.getElementById('liveDot').className = 'logo-dot';
+  });
+  document.addEventListener('sharing-stopped', () => {
+    document.getElementById('resolution').textContent = '—';
+    document.getElementById('status').textContent = 'Idle';
+    document.getElementById('status').className = 'pill';
+    document.getElementById('liveDot').className = 'logo-dot offline';
+  });
+  document.addEventListener('student-count-updated', (e) => {
+    const n = e.detail.count;
+    document.getElementById('connectedCount').textContent = `${n} student${n !== 1 ? 's' : ''}`;
+    document.getElementById('studentStat').textContent = n;
+  });
+</script>
+
 </body>
 </html>

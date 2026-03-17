@@ -2,163 +2,259 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Student - LabShare Ultra</title>
+  <title>LabShare — Student</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #000;
-      color: white;
+      color: #fff;
+      height: 100vh;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    .header {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      padding: 12px 20px;
+    /* ── Minimal topbar (auto-hides) ── */
+    .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 48px;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+      transition: opacity .3s;
+      z-index: 10;
     }
 
-    .header h1 {
-      font-size: 1.2em;
+    .logo { font-weight: 700; font-size: 1em; opacity: .8; }
+
+    .pills { display: flex; gap: 10px; }
+
+    .pill {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.78em;
+      font-weight: 600;
+      background: rgba(255,255,255,.1);
+      color: #d1d5db;
     }
 
-    .stats {
-      display: flex;
-      gap: 15px;
-      font-size: 0.85em;
-    }
+    .pill.green { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    .pill.yellow { background: rgba(234,179,8,.2); color: #fde68a; }
 
-    .stat-item {
-      background: rgba(0,0,0,0.3);
-      padding: 5px 12px;
-      border-radius: 15px;
-    }
-
-    #screenContainer {
-      width: 100vw;
-      height: calc(100vh - 50px);
+    /* ── Video area ── */
+    .stage {
+      flex: 1;
+      position: relative;
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
-      position: relative;
     }
 
     #screen {
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       display: none;
-      image-rendering: auto;
-      image-rendering: crisp-edges;
-      image-rendering: -webkit-optimize-contrast;
     }
 
+    /* ── Waiting state ── */
     .waiting {
-      text-align: center;
-      color: #555;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    .waiting h2 {
-      font-size: 5em;
-      margin-bottom: 20px;
-    }
-
-    .waiting p {
-      font-size: 1.5em;
-    }
-
-    #fullscreenBtn {
       position: absolute;
-      bottom: 30px;
-      right: 30px;
-      background: rgba(0,0,0,0.8);
-      border: 2px solid #4facfe;
-      color: white;
-      padding: 15px 30px;
-      border-radius: 30px;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: #4b5563;
+    }
+
+    .waiting-icon {
+      font-size: 5rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .waiting h2 { font-size: 1.3em; color: #9ca3af; }
+    .waiting p  { font-size: 0.9em; }
+
+    /* Connecting spinner */
+    .spinner {
+      display: none;
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,.1);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Bottom controls overlay ── */
+    .controls {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+
+    .stage:hover .controls { opacity: 1; pointer-events: all; }
+
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: none;
+      font-size: .9em;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 1em;
-      font-weight: bold;
+      backdrop-filter: blur(12px);
+      transition: transform .15s;
+    }
+
+    .ctrl-btn:hover { transform: scale(1.05); }
+
+    .ctrl-fullscreen {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+
+    /* ── Stats overlay (top-right corner when live) ── */
+    .stats-overlay {
       display: none;
-      transition: all 0.3s;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,.6);
       backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: .8em;
+      line-height: 1.8;
+      color: #d1d5db;
     }
 
-    #fullscreenBtn:hover {
-      background: #4facfe;
-      transform: scale(1.05);
-    }
-
-    .fps-indicator {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(0,0,0,0.8);
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-family: 'Courier New', monospace;
-      font-size: 1.1em;
-      border: 2px solid #00f2fe;
-      display: none;
-    }
-
-    .ultra-badge {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #00b894, #00cec9);
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 0.85em;
-      font-weight: bold;
-      display: none;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
+    .stats-overlay .val { color: #fff; font-weight: 700; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>👨‍🎓 Student View</h1>
-    <div class="stats">
-      <div class="stat-item" id="status">⚫ Waiting...</div>
-      <div class="stat-item" id="fps">0 FPS</div>
-    </div>
+
+<div class="topbar">
+  <div class="logo">⬤ LabShare</div>
+  <div class="pills">
+    <div class="pill" id="status">Waiting for teacher…</div>
+    <div class="pill" id="fpsPill" style="display:none">0 FPS</div>
+  </div>
+</div>
+
+<div class="stage">
+
+  <video id="screen" autoplay playsinline></video>
+
+  <div class="waiting" id="waiting">
+    <div class="waiting-icon">📺</div>
+    <h2 id="waitMsg">Waiting for teacher to go live</h2>
+    <p id="waitSub">Your screen will appear here automatically</p>
+    <div class="spinner" id="spinner"></div>
   </div>
 
-  <div id="screenContainer">
-    <div class="waiting" id="waiting">
-      <h2>📺</h2>
-      <p>Waiting for teacher to start broadcasting...</p>
-      <p style="font-size: 0.85em; opacity: 0.7; margin-top: 20px;">
-        Ultra-performance mode • Zero lag • 60 FPS capable
-      </p>
-    </div>
-
-    <img id="screen" alt="Teacher's Screen">
-
-    <div class="fps-indicator" id="fpsIndicator">
-      <span id="fpsValue">0</span> FPS
-    </div>
-
-    <div class="ultra-badge" id="ultraBadge">
-      ⚡ ULTRA MODE
-    </div>
-
-    <button id="fullscreenBtn">⛶ Fullscreen</button>
+  <div class="stats-overlay" id="statsOverlay">
+    <div>Protocol &nbsp;<span class="val">WebRTC P2P</span></div>
+    <div>Codec &nbsp;&nbsp;&nbsp;&nbsp;<span class="val" id="codecVal">—</span></div>
+    <div>FPS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="val" id="fpsVal">—</span></div>
+    <div>Latency &nbsp;<span class="val" id="latVal">—</span></div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/student.js"></script>
+  <div class="controls">
+    <button class="ctrl-btn ctrl-fullscreen" id="fullscreenBtn">⛶ Fullscreen</button>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/student.js"></script>
+<script>
+  // Stats polling once stream is live
+  let statsTimer = null;
+  let pc_ref = null; // set by student.js via custom event
+
+  document.addEventListener('stream-live', (e) => {
+    pc_ref = e.detail.pc;
+    document.getElementById('waiting').style.display = 'none';
+    document.getElementById('screen').style.display = 'block';
+    document.getElementById('statsOverlay').style.display = 'block';
+    document.getElementById('fpsPill').style.display = 'block';
+    document.getElementById('status').textContent = '🟢 Live';
+    document.getElementById('status').className = 'pill green';
+
+    // Poll WebRTC stats every second
+    statsTimer = setInterval(async () => {
+      if (!pc_ref) return;
+      try {
+        const stats = await pc_ref.getStats();
+        stats.forEach(r => {
+          if (r.type === 'inbound-rtp' && r.kind === 'video') {
+            const fps = Math.round(r.framesPerSecond || 0);
+            document.getElementById('fpsVal').textContent = fps;
+            document.getElementById('fpsPill').textContent = `${fps} FPS`;
+
+            const codec = r.codecId || '';
+            if (codec) document.getElementById('codecVal').textContent = 'H264 / VP8';
+          }
+          if (r.type === 'candidate-pair' && r.state === 'succeeded') {
+            const ms = Math.round(r.currentRoundTripTime * 1000 || 0);
+            if (ms) document.getElementById('latVal').textContent = `${ms} ms`;
+          }
+        });
+      } catch (_) {}
+    }, 1000);
+  });
+
+  document.addEventListener('stream-stopped', () => {
+    clearInterval(statsTimer);
+    document.getElementById('waiting').style.display = 'flex';
+    document.getElementById('screen').style.display = 'none';
+    document.getElementById('statsOverlay').style.display = 'none';
+    document.getElementById('fpsPill').style.display = 'none';
+    document.getElementById('status').textContent = 'Teacher offline';
+    document.getElementById('status').className = 'pill';
+    document.getElementById('waitMsg').textContent = 'Teacher stopped sharing';
+    document.getElementById('spinner').style.display = 'none';
+  });
+
+  document.addEventListener('stream-connecting', () => {
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('waitMsg').textContent = 'Connecting…';
+    document.getElementById('waitSub').textContent = 'Establishing WebRTC peer connection';
+    document.getElementById('status').textContent = '🟡 Connecting';
+    document.getElementById('status').className = 'pill yellow';
+  });
+
+  document.getElementById('fullscreenBtn').onclick = () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  };
+</script>
+
 </body>
 </html>

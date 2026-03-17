@@ -1,94 +1,89 @@
-const socket = io({
-  transports: ['websocket'],
-  upgrade: false
-});
+const socket = io({ transports: ['websocket'], upgrade: false });
 
-const screen = document.getElementById('screen');
+let pc = null;
+const video = document.getElementById('screen');
 const waiting = document.getElementById('waiting');
 const status = document.getElementById('status');
-const fpsDisplay = document.getElementById('fps');
 
-let receiving = false;
-let frameCount = 0;
-let lastFpsUpdate = Date.now();
+const rtcConfig = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+  iceCandidatePoolSize: 10
+};
 
 socket.emit('join-student');
 
-socket.on('broadcast-started', () => {
-  console.log('Broadcast started');
-  status.textContent = '🟢 Receiving';
-  waiting.style.display = 'none';
-  screen.style.display = 'block';
-  document.getElementById('fullscreenBtn').style.display = 'block';
-  document.getElementById('fpsIndicator').style.display = 'block';
-  document.getElementById('ultraBadge').style.display = 'block';
-  receiving = true;
+socket.on('teacher-ready', () => {
+  status.textContent = '🟡 Connecting...';
+  document.dispatchEvent(new CustomEvent('stream-connecting'));
+  socket.emit('student-join');
 });
 
-socket.on('broadcast-stopped', () => {
-  console.log('Broadcast stopped');
-  stopReceiving();
-});
-
-// Receive binary frames (ultra-fast)
-socket.on('frame', (arrayBuffer) => {
-  if (!receiving) {
-    receiving = true;
-    waiting.style.display = 'none';
-    screen.style.display = 'block';
-    document.getElementById('fullscreenBtn').style.display = 'block';
-    document.getElementById('fpsIndicator').style.display = 'block';
-    document.getElementById('ultraBadge').style.display = 'block';
-  }
-
-  // Convert ArrayBuffer to Blob to URL (fastest method)
-  const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
-
-  // Revoke old URL to prevent memory leak
-  if (screen.src && screen.src.startsWith('blob:')) {
-    URL.revokeObjectURL(screen.src);
-  }
-
-  // Set new frame
-  screen.src = URL.createObjectURL(blob);
-
-  // Update FPS counter
-  frameCount++;
-  const now = Date.now();
-  if (now - lastFpsUpdate >= 1000) {
-    const currentFps = frameCount;
-    fpsDisplay.textContent = `${currentFps} FPS`;
-    document.getElementById('fpsValue').textContent = currentFps;
-    frameCount = 0;
-    lastFpsUpdate = now;
-  }
-});
-
-function stopReceiving() {
-  receiving = false;
-  screen.style.display = 'none';
-  waiting.style.display = 'block';
+socket.on('teacher-stopped', () => {
+  cleanup();
+  document.dispatchEvent(new CustomEvent('stream-stopped'));
+  status.textContent = '⚫ Teacher stopped';
+  video.style.display = 'none';
   document.getElementById('fullscreenBtn').style.display = 'none';
-  status.textContent = '⚫ Waiting...';
+});
 
-  if (screen.src && screen.src.startsWith('blob:')) {
-    URL.revokeObjectURL(screen.src);
-    screen.src = '';
+socket.on('offer', async ({ offer }) => {
+  try {
+    pc = new RTCPeerConnection(rtcConfig);
+
+    pc.ontrack = (e) => {
+      if (e.streams && e.streams[0]) {
+        video.srcObject = e.streams[0];
+        video.style.display = 'block';
+        waiting.style.display = 'none';
+        document.getElementById('fullscreenBtn').style.display = 'block';
+        status.textContent = '🟢 Live';
+        // Dispatch event so the view can start polling stats
+        document.dispatchEvent(new CustomEvent('stream-live', { detail: { pc } }));
+      }
+    };
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) socket.emit('ice-candidate', { candidate: e.candidate });
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') status.textContent = '🟢 Live';
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+        cleanup();
+        status.textContent = '🔴 Disconnected';
+      }
+    };
+
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('answer', { answer });
+
+  } catch (err) {
+    console.error('WebRTC error:', err);
+    status.textContent = '🔴 Error - Refresh page';
+  }
+});
+
+socket.on('ice-candidate', async ({ candidate }) => {
+  if (pc && candidate) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (_) {}
+  }
+});
+
+function cleanup() {
+  if (pc) { pc.close(); pc = null; }
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
   }
 }
 
-// Fullscreen
 document.getElementById('fullscreenBtn').onclick = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
 };
 
-socket.on('disconnect', () => {
-  stopReceiving();
-  status.textContent = '🔴 Disconnected';
-});
+socket.on('disconnect', () => { cleanup(); status.textContent = '🔴 Disconnected'; });
 
-console.log('Student loaded - optimized for instant playback');
+console.log('Student WebRTC ready');
